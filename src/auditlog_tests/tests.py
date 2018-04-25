@@ -1,5 +1,7 @@
 import datetime
+import django
 from django.conf import settings
+from django.contrib import auth
 from django.contrib.auth.models import User, AnonymousUser
 from django.core.exceptions import ValidationError
 from django.db.models.signals import pre_save
@@ -14,7 +16,8 @@ from auditlog.registry import auditlog
 from auditlog_tests.models import SimpleModel, AltPrimaryKeyModel, UUIDPrimaryKeyModel, \
     ProxyModel, SimpleIncludeModel, SimpleExcludeModel, SimpleMappingModel, RelatedModel, \
     ManyRelatedModel, AdditionalDataIncludedModel, DateTimeFieldModel, ChoicesFieldModel, \
-    CharfieldTextfieldModel, PostgresArrayFieldModel
+    CharfieldTextfieldModel, PostgresArrayFieldModel, NoDeleteHistoryModel
+from auditlog import compat
 
 
 class SimpleModelTest(TestCase):
@@ -267,12 +270,13 @@ class DateTimeFieldModelTest(TestCase):
     """Tests if DateTimeField changes are recognised correctly"""
 
     utc_plus_one = timezone.get_fixed_timezone(datetime.timedelta(hours=1))
+    now = timezone.now()
 
     def test_model_with_same_time(self):
         timestamp = datetime.datetime(2017, 1, 10, 12, 0, tzinfo=timezone.utc)
         date = datetime.date(2017, 1, 10)
         time = datetime.time(12, 0)
-        dtm = DateTimeFieldModel(label='DateTimeField model', timestamp=timestamp, date=date, time=time)
+        dtm = DateTimeFieldModel(label='DateTimeField model', timestamp=timestamp, date=date, time=time, naive_dt=self.now)
         dtm.save()
         self.assertTrue(dtm.history.count() == 1, msg="There is one log entry")
 
@@ -290,7 +294,7 @@ class DateTimeFieldModelTest(TestCase):
         timestamp = datetime.datetime(2017, 1, 10, 12, 0, tzinfo=timezone.utc)
         date = datetime.date(2017, 1, 10)
         time = datetime.time(12, 0)
-        dtm = DateTimeFieldModel(label='DateTimeField model', timestamp=timestamp, date=date, time=time)
+        dtm = DateTimeFieldModel(label='DateTimeField model', timestamp=timestamp, date=date, time=time, naive_dt=self.now)
         dtm.save()
         self.assertTrue(dtm.history.count() == 1, msg="There is one log entry")
 
@@ -306,7 +310,7 @@ class DateTimeFieldModelTest(TestCase):
         timestamp = datetime.datetime(2017, 1, 10, 12, 0, tzinfo=timezone.utc)
         date = datetime.date(2017, 1, 10)
         time = datetime.time(12, 0)
-        dtm = DateTimeFieldModel(label='DateTimeField model', timestamp=timestamp, date=date, time=time)
+        dtm = DateTimeFieldModel(label='DateTimeField model', timestamp=timestamp, date=date, time=time, naive_dt=self.now)
         dtm.save()
         self.assertTrue(dtm.history.count() == 1, msg="There is one log entry")
 
@@ -322,7 +326,7 @@ class DateTimeFieldModelTest(TestCase):
         timestamp = datetime.datetime(2017, 1, 10, 12, 0, tzinfo=timezone.utc)
         date = datetime.date(2017, 1, 10)
         time = datetime.time(12, 0)
-        dtm = DateTimeFieldModel(label='DateTimeField model', timestamp=timestamp, date=date, time=time)
+        dtm = DateTimeFieldModel(label='DateTimeField model', timestamp=timestamp, date=date, time=time, naive_dt=self.now)
         dtm.save()
         self.assertTrue(dtm.history.count() == 1, msg="There is one log entry")
 
@@ -338,7 +342,7 @@ class DateTimeFieldModelTest(TestCase):
         timestamp = datetime.datetime(2017, 1, 10, 12, 0, tzinfo=timezone.utc)
         date = datetime.date(2017, 1, 10)
         time = datetime.time(12, 0)
-        dtm = DateTimeFieldModel(label='DateTimeField model', timestamp=timestamp, date=date, time=time)
+        dtm = DateTimeFieldModel(label='DateTimeField model', timestamp=timestamp, date=date, time=time, naive_dt=self.now)
         dtm.save()
         self.assertTrue(dtm.history.count() == 1, msg="There is one log entry")
 
@@ -354,7 +358,7 @@ class DateTimeFieldModelTest(TestCase):
         timestamp = datetime.datetime(2017, 1, 10, 12, 0, tzinfo=timezone.utc)
         date = datetime.date(2017, 1, 10)
         time = datetime.time(12, 0)
-        dtm = DateTimeFieldModel(label='DateTimeField model', timestamp=timestamp, date=date, time=time)
+        dtm = DateTimeFieldModel(label='DateTimeField model', timestamp=timestamp, date=date, time=time, naive_dt=self.now)
         dtm.save()
         self.assertTrue(dtm.history.count() == 1, msg="There is one log entry")
 
@@ -370,7 +374,7 @@ class DateTimeFieldModelTest(TestCase):
         timestamp = datetime.datetime(2017, 1, 10, 15, 0, tzinfo=timezone.utc)
         date = datetime.date(2017, 1, 10)
         time = datetime.time(12, 0)
-        dtm = DateTimeFieldModel(label='DateTimeField model', timestamp=timestamp, date=date, time=time)
+        dtm = DateTimeFieldModel(label='DateTimeField model', timestamp=timestamp, date=date, time=time, naive_dt=self.now)
         dtm.save()
         localized_timestamp = timestamp.astimezone(gettz(settings.TIME_ZONE))
         self.assertTrue(dtm.history.latest().changes_display_dict["timestamp"][1] == \
@@ -398,7 +402,7 @@ class DateTimeFieldModelTest(TestCase):
         timestamp = datetime.datetime(2017, 1, 10, 15, 0, tzinfo=timezone.utc)
         date = datetime.date(2017, 1, 10)
         time = datetime.time(12, 0)
-        dtm = DateTimeFieldModel(label='DateTimeField model', timestamp=timestamp, date=date, time=time)
+        dtm = DateTimeFieldModel(label='DateTimeField model', timestamp=timestamp, date=date, time=time, naive_dt=self.now)
         dtm.save()
         self.assertTrue(dtm.history.latest().changes_display_dict["date"][1] == \
                         dateformat.format(date, settings.DATE_FORMAT),
@@ -423,7 +427,7 @@ class DateTimeFieldModelTest(TestCase):
         timestamp = datetime.datetime(2017, 1, 10, 15, 0, tzinfo=timezone.utc)
         date = datetime.date(2017, 1, 10)
         time = datetime.time(12, 0)
-        dtm = DateTimeFieldModel(label='DateTimeField model', timestamp=timestamp, date=date, time=time)
+        dtm = DateTimeFieldModel(label='DateTimeField model', timestamp=timestamp, date=date, time=time, naive_dt=self.now)
         dtm.save()
         self.assertTrue(dtm.history.latest().changes_display_dict["time"][1] == \
                         dateformat.format(time, settings.TIME_FORMAT),
@@ -443,6 +447,17 @@ class DateTimeFieldModelTest(TestCase):
                         formats.localize(time),
                         msg=("The time should be formatted according to Django's settings for"
                              " USE_L10N is True with a different LANGUAGE_CODE."))
+
+    def test_update_naive_dt(self):
+        timestamp = datetime.datetime(2017, 1, 10, 15, 0, tzinfo=timezone.utc)
+        date = datetime.date(2017, 1, 10)
+        time = datetime.time(12, 0)
+        dtm = DateTimeFieldModel(label='DateTimeField model', timestamp=timestamp, date=date, time=time, naive_dt=self.now)
+        dtm.save()
+
+        # Change with naive field doesnt raise error
+        dtm.naive_dt = timezone.make_naive(timezone.now(), timezone=timezone.utc)
+        dtm.save()
 
 
 class UnregisterTest(TestCase):
@@ -581,3 +596,100 @@ class PostgresArrayFieldModelTest(TestCase):
         self.obj.save()
         self.assertTrue(self.obj.history.latest().changes_display_dict["arrayfield"][1] == "Green",
                         msg="The human readable text 'Green' is displayed.")
+
+
+class CompatibilityTest(TestCase):
+    """Test case for compatibility functions."""
+
+    def test_is_authenticated(self):
+        """Test that the 'is_authenticated' compatibility function is working.
+
+        Bit of explanation: the `is_authenticated` property on request.user is
+        *always* set to 'False' for AnonymousUser, and it is *always* set to
+        'True' for *any* other (i.e. identified/authenticated) user.
+
+        So, the logic of this test is to ensure that compat.is_authenticated()
+        returns the correct value based on whether or not the User is an
+        anonymous user (simulating what goes on in the real request.user).
+
+        """
+
+        # Test compat.is_authenticated for anonymous users
+        self.user = auth.get_user(self.client)
+        if django.VERSION < (1, 10):
+            assert self.user.is_anonymous()
+        else:
+            assert self.user.is_anonymous
+        assert not compat.is_authenticated(self.user)
+
+        # Setup some other user, which is *not* anonymous, and check
+        # compat.is_authenticated
+        self.user = User.objects.create(
+            username="test.user",
+            email="test.user@mail.com",
+            password="auditlog"
+        )
+        if django.VERSION < (1, 10):
+            assert not self.user.is_anonymous()
+        else:
+            assert not self.user.is_anonymous
+        assert compat.is_authenticated(self.user)
+
+
+class AdminPanelTest(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.username = "test_admin"
+        cls.password = User.objects.make_random_password()
+        cls.user, created = User.objects.get_or_create(username=cls.username)
+        cls.user.set_password(cls.password)
+        cls.user.is_staff = True
+        cls.user.is_superuser = True
+        cls.user.is_active = True
+        cls.user.save()
+        cls.obj = SimpleModel.objects.create(text='For admin logentry test')
+
+    def test_auditlog_admin(self):
+        self.client.login(username=self.username, password=self.password)
+        log_pk = self.obj.history.latest().pk
+        res = self.client.get("/admin/auditlog/logentry/")
+        assert res.status_code == 200
+        res = self.client.get("/admin/auditlog/logentry/add/")
+        assert res.status_code == 200
+        res = self.client.get("/admin/auditlog/logentry/{}/".format(log_pk), follow=True)
+        assert res.status_code == 200
+        res = self.client.get("/admin/auditlog/logentry/{}/delete/".format(log_pk))
+        assert res.status_code == 200
+        res = self.client.get("/admin/auditlog/logentry/{}/history/".format(log_pk))
+        assert res.status_code == 200
+
+
+class NoDeleteHistoryTest(TestCase):
+    def test_delete_related(self):
+        instance = SimpleModel.objects.create(integer=1)
+        assert LogEntry.objects.all().count() == 1
+        instance.integer = 2
+        instance.save()
+        assert LogEntry.objects.all().count() == 2
+
+        instance.delete()
+        entries = LogEntry.objects.order_by('id')
+
+        # The "DELETE" record is always retained
+        assert LogEntry.objects.all().count() == 1
+        assert entries.first().action == LogEntry.Action.DELETE
+
+    def test_no_delete_related(self):
+        instance = NoDeleteHistoryModel.objects.create(integer=1)
+        self.assertEqual(LogEntry.objects.all().count(), 1)
+        instance.integer = 2
+        instance.save()
+        self.assertEqual(LogEntry.objects.all().count(), 2)
+
+        instance.delete()
+        entries = LogEntry.objects.order_by('id')
+        self.assertEqual(entries.count(), 3)
+        self.assertEqual(
+            list(entries.values_list('action', flat=True)),
+            [LogEntry.Action.CREATE, LogEntry.Action.UPDATE, LogEntry.Action.DELETE]
+        )
