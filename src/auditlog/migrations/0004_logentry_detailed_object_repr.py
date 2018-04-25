@@ -15,6 +15,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='logentry',
             name='additional_data',
-            field=JSONField(null=True, blank=True),
+            field=fields.JSONField(null=True, blank=True),
         ),
     ]
