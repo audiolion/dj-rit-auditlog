@@ -6,6 +6,7 @@ import ast
 from django.conf import settings
 from django.contrib.contenttypes.fields import GenericRelation
 from django.contrib.contenttypes.models import ContentType
+from django.contrib.postgres.fields import JSONField
 from django.core.exceptions import FieldDoesNotExist
 from django.db import models, DEFAULT_DB_ALIAS
 from django.db.models import QuerySet, Q
@@ -14,7 +15,6 @@ from django.utils.encoding import python_2_unicode_compatible, smart_text
 from django.utils.six import iteritems, integer_types
 from django.utils.translation import ugettext_lazy as _
 
-from jsonfield.fields import JSONField
 from dateutil import parser
 from dateutil.tz import gettz
 
