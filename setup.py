@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='dj-rit-auditlog',
-    version='0.5.1',
+    version='0.5.2',
     packages=['auditlog', 'auditlog.migrations', 'auditlog.management', 'auditlog.management.commands'],
     package_dir={'': 'src'},
     url='https://github.com/audiolion/dj-rit-auditlog',
